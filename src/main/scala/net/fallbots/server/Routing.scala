@@ -1,6 +1,6 @@
 package net.fallbots.server
 
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.http.scaladsl.model.ws.Message
 import akka.http.scaladsl.{Http, server}
 import akka.http.scaladsl.server.Directives._
@@ -16,7 +16,7 @@ object Routing {
   case object GetWebsocketFlow
 }
 
-class Routing(val actorSystem: ActorSystem) {
+class Routing(val actorSystem: ActorSystem, botManager: ActorRef) {
 
   implicit val as: ActorSystem      = actorSystem
   implicit val ec: ExecutionContext = actorSystem.dispatcher
@@ -40,7 +40,7 @@ class Routing(val actorSystem: ActorSystem) {
       // expose the path /connect
 
       // create a client handler actor
-      val handler    = as.actorOf(Props[ClientHandlerActor])
+      val handler    = as.actorOf(ClientHandlerActor.props(botManager))
       val futureFlow = (handler ? GetWebsocketFlow)(3.seconds).mapTo[Flow[Message, Message, _]]
 
       onComplete(futureFlow) {

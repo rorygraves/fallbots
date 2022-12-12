@@ -1,5 +1,7 @@
 package net.fallbots.bot
 
+import net.fallbots.shared.BotId
+
 object SampleBotApp {
 
   def main(args: Array[String]): Unit = {
@@ -13,7 +15,7 @@ object SampleBotApp {
     val botId     = args(2).toInt
     val botSecret = args(3)
 
-    new BotRunner(host, port, botId, botSecret, new NoOpBot).run()
+    new BotRunner(host, port, botId, botSecret, new SimpleBot(BotId(1))).run()
 
   }
 }

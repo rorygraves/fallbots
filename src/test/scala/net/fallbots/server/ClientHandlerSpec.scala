@@ -3,15 +3,11 @@ package net.fallbots.server
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Directives
 import akka.http.scaladsl.testkit.{ScalatestRouteTest, WSProbe}
-import net.fallbots.message.{FBMessage, RegisterMessage, RegistrationResponse, StatusMessage}
+import net.fallbots.message.{FBMessage, RegisterMessage, RegistrationResponse}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class ClientHandlerSpec
-    extends AnyWordSpec
-    with Matchers
-    with Directives
-    with ScalatestRouteTest {
+class ClientHandlerSpec extends AnyWordSpec with Matchers with Directives with ScalatestRouteTest {
 
   implicit val as: ActorSystem = ActorSystem("example-test")
 
@@ -23,7 +19,11 @@ class ClientHandlerSpec
       // create a testing probe representing the client-side
       val wsClient = WSProbe()
 
-      val routing = new Routing(as)
+      val gameManager = as.actorOf(GameManager.props(1))
+      val botManager  = as.actorOf(BotManager.props(gameManager))
+
+      import net.fallbots.message.MessageImplicits._
+      val routing = new Routing(as, botManager)
 
       // WS creates a WebSocket request for testing
       WS("/connect", wsClient.flow) ~> routing.gameServerRouting ~>
@@ -41,12 +41,8 @@ class ClientHandlerSpec
             wsClient.expectMessage(write(msg))
           }
 
-          expectMsg(StatusMessage(1))
-          expectMsg(StatusMessage(2))
-          expectMsg(StatusMessage(3))
-
           writeMsg(RegisterMessage(1, "abc"))
-          expectMsg(RegistrationResponse(true))
+          expectMsg(RegistrationResponse(true, ""))
         }
     }
   }

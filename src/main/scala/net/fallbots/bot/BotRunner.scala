@@ -7,6 +7,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import net.fallbots.bot.BotRunner.ClosedException
 import net.fallbots.message.{FBMessage, RegisterMessage, RegistrationResponse}
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -14,6 +15,10 @@ import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue, TimeUnit}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
+
+object BotRunner {
+  class ClosedException extends Throwable
+}
 
 /** BotRunner handles the communication with the game server. Bots are created by implementing and supplying the
   * BotInterface.
@@ -30,7 +35,7 @@ import scala.concurrent.{Await, Future}
   */
 class BotRunner(hostname: String, port: Int, botId: Int, botSecret: String, bot: BotInterface) {
 
-  val logger: Logger           = LoggerFactory.getLogger("BotRunner")
+  val logger: Logger           = LoggerFactory.getLogger(s"BotRunner-$botId")
   implicit val as: ActorSystem = ActorSystem.apply("bot-runner")
 
   import upickle.default._
@@ -47,8 +52,8 @@ class BotRunner(hostname: String, port: Int, botId: Int, botSecret: String, bot:
     // each message received is passed to the incomingQueue for consumption by the bot.
     val msgSink: Sink[Message, Future[Done]] =
       Sink.foreach { case message: TextMessage.Strict =>
-        val decoded = read[net.fallbots.message.FBMessage](message.text)
-        println("client received: " + decoded)
+        import net.fallbots.message.MessageImplicits._
+        val decoded = read[FBMessage](message.text)
         incomingQueue.put(decoded)
       }
 
@@ -70,7 +75,7 @@ class BotRunner(hostname: String, port: Int, botId: Int, botSecret: String, bot:
       // just like a regular http request we can access response status which is available via upgrade.response.status
       // status code 101 (Switching Protocols) indicates that server support WebSockets
       if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
-        println("switching protocols")
+        logger.info("Successfully upgraded connection to websocket")
         Done
       } else {
         throw new RuntimeException(
@@ -84,17 +89,24 @@ class BotRunner(hostname: String, port: Int, botId: Int, botSecret: String, bot:
 
     Await.result(connected, Duration.apply(1, TimeUnit.MINUTES))
 
-    closed.foreach(_ => println("closed"))
+    closed.foreach(_ => logger.info("CLOSED not handled"))
   }
 
   /** send the bot authentication message - and receive and validate the reply.
     */
   def authenticate(): Unit = {
+    logger.info("Sending authentication")
     sendMessage(RegisterMessage(botId, botSecret))
     val msg = receiveMessage()
     msg match {
-      case RegistrationResponse(accepted) =>
-        logger.info(s"Got registration message - accepted: $accepted")
+      case RegistrationResponse(accepted, msg) =>
+        if (accepted)
+          logger.info("Registration accepted")
+        else {
+          logger.warn(s"Registration rejected with message: $msg - shutting down")
+          throw new ClosedException
+        }
+        logger.info(s"Got registration message - accepted: $accepted $msg")
       case _ =>
         throw new IllegalStateException("Got unexpected message during registration: " + msg)
     }
@@ -117,6 +129,10 @@ class BotRunner(hostname: String, port: Int, botId: Int, botSecret: String, bot:
     */
   private def sendMessage(message: FBMessage): Unit = {
     logger.info(s"Sending message: $message")
+    import net.fallbots.message.MessageImplicits._
+    println("Outging queue = " + outgoingQueue)
+    println("message = " + message)
+    println("  msg = " + write(message))
     outgoingQueue.offer(TextMessage(write(message)))
   }
 
@@ -129,6 +145,9 @@ class BotRunner(hostname: String, port: Int, botId: Int, botSecret: String, bot:
   def run(): Unit = {
     connect()
     authenticate()
+    // notify the bot that we are successfully connected
+    bot.connected()
+
     botLoop()
   }
 }

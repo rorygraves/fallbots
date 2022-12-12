@@ -11,6 +11,9 @@ import net.fallbots.server.Routing.GetWebsocketFlow
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
+/** Wrap all the logic of setting up message flows for the websocket connection. Subclasses simply need to implement
+  * 'mainRecieve to do their logic. To send a message to the socket use down ! FPMessageInstance.
+  */
 abstract class WebsocketHandlerActor extends Actor {
 
   implicit val as: ActorSystem      = context.system
@@ -31,6 +34,7 @@ abstract class WebsocketHandlerActor extends Actor {
         Flow[Message]
           .mapAsync(1) {
             case tm: TextMessage =>
+              import net.fallbots.message.MessageImplicits._
               tm.toStrict(3.seconds).map(m => read[net.fallbots.message.FBMessage](m.text))
             case bm: BinaryMessage =>
               // consume the stream
@@ -39,6 +43,7 @@ abstract class WebsocketHandlerActor extends Actor {
           }
       )
 
+      import net.fallbots.message.MessageImplicits._
       val pubSrc = b.add(Source.fromPublisher(publisher).map(m => TextMessage(write(m))))
 
       textMsgFlow ~> Sink.foreach[FBMessage](self ! _)

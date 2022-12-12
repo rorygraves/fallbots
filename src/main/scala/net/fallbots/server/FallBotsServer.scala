@@ -1,8 +1,9 @@
 package net.fallbots.server
 
 import akka.actor.ActorSystem
-import net.fallbots.bot.{BotRunner, NoOpBot}
+import net.fallbots.bot.{BotRunner, SimpleBot}
 import net.fallbots.server.cmdline.{CmdLineParser, Config}
+import net.fallbots.shared.BotId
 import org.slf4j.LoggerFactory
 
 object FallBotsServer {
@@ -26,14 +27,17 @@ object FallBotsServer {
   def runServer(config: Config): Unit = {
     implicit val as: ActorSystem = ActorSystem("main")
 
+    val gameManager = as.actorOf(GameManager.props(1), "GameManager")
+    val botManager  = as.actorOf(BotManager.props(gameManager), "botManager")
+
     logger.info("FallBots Server starting")
-    val routing = new Routing(as)
+    val routing = new Routing(as, botManager)
 
     routing.startServer(config.port)
 
     println("HERE")
     Thread.sleep(1000)
 
-    new BotRunner("localhost", config.port, 1, "abc", new NoOpBot()).run()
+    new BotRunner("localhost", config.port, 1, "abc", new SimpleBot(BotId(1))).run()
   }
 }
