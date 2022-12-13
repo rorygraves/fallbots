@@ -7,7 +7,7 @@ lazy val root = (project in file(".")).settings(
   inThisBuild(
     List(
       organization := "net.fallbots",
-      scalaVersion := "2.13.8"
+      scalaVersion := "2.13.10"
     )
   ),
   name := "fallbots",
@@ -22,7 +22,7 @@ lazy val root = (project in file(".")).settings(
     "com.typesafe.akka" %% "akka-http"        % AkkaHttpVersion,
 
     // logging
-    "ch.qos.logback" % "logback-classic" % "1.4.4",
+    "ch.qos.logback" % "logback-classic" % "1.4.5",
 
     // testing
     "org.scalatest"     %% "scalatest"           % "3.2.14"        % Test,

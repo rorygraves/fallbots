@@ -10,7 +10,7 @@ import scala.util.Random
 class ExampleGameSuite extends AnyFunSuite {
   test("Basic game init") {
 
-    val random = new Random(0)
+    val random = new Random(5)
     val bots =
       Map(BotId(1) -> new SimpleBot(BotId(1)), BotId(2) -> new SimpleBot(BotId(2)), BotId(3) -> new SimpleBot(BotId(3)))
 

@@ -130,7 +130,7 @@ class BotRunner(hostname: String, port: Int, botId: Int, botSecret: String, bot:
   private def sendMessage(message: FBMessage): Unit = {
     logger.info(s"Sending message: $message")
     import net.fallbots.message.MessageImplicits._
-    println("Outging queue = " + outgoingQueue)
+    println("Outgoing queue = " + outgoingQueue)
     println("message = " + message)
     println("  msg = " + write(message))
     outgoingQueue.offer(TextMessage(write(message)))

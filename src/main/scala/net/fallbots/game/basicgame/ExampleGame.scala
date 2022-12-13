@@ -1,6 +1,5 @@
 package net.fallbots.game.basicgame
 
-import ch.qos.logback.core.joran.spi.EventPlayer
 import net.fallbots.game.state._
 import net.fallbots.game.{Game, GameDef, GameRoundResult}
 import net.fallbots.shared.BotId
@@ -44,10 +43,10 @@ object ExampleGame extends GameDef {
     val initialBoard = Board.createEmpty(10, 10, target)
 
     val board = placePlayers(initialBoard, playerList, random)
-    (new ExampleGame(board, random), genereatePlayerInfos(board))
+    (new ExampleGame(board, random), generatePlayerInfos(board))
   }
 
-  def genereatePlayerInfos(board: Board): Map[BotId, Board] =
+  private def generatePlayerInfos(board: Board): Map[BotId, Board] =
     board.bots.keys.map(b => b -> filterBoardForBot(b, board)).toMap
 }
 
@@ -74,7 +73,7 @@ class ExampleGame(initialBoard: Board, random: Random) extends Game {
       case Some(winner) =>
         GameRoundResult.GameOver(winner)
       case None =>
-        GameRoundResult.GameRound(ExampleGame.genereatePlayerInfos(currentBoard))
+        GameRoundResult.GameRound(ExampleGame.generatePlayerInfos(currentBoard))
     }
   }
 }

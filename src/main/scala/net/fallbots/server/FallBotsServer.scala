@@ -4,11 +4,11 @@ import akka.actor.ActorSystem
 import net.fallbots.bot.{BotRunner, SimpleBot}
 import net.fallbots.server.cmdline.{CmdLineParser, Config}
 import net.fallbots.shared.BotId
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 
 object FallBotsServer {
 
-  val logger = LoggerFactory.getLogger(this.getClass)
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
   def main(args: Array[String]): Unit = {
 
     CmdLineParser.parseCommandLine(args) match {

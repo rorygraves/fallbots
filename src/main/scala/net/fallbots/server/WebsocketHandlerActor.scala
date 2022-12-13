@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 /** Wrap all the logic of setting up message flows for the websocket connection. Subclasses simply need to implement
-  * 'mainRecieve to do their logic. To send a message to the socket use down ! FPMessageInstance.
+  * 'mainReceive to do their logic. To send a message to the socket use down ! FPMessageInstance.
   */
 abstract class WebsocketHandlerActor extends Actor {
 

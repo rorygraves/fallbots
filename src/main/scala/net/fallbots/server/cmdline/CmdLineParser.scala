@@ -3,8 +3,8 @@ package net.fallbots.server.cmdline
 import scopt.OParser
 
 object CmdLineParser {
-  val builder = OParser.builder[Config]
-  val parser1 = {
+  private val builder = OParser.builder[Config]
+  private val argsParser = {
     import builder._
     OParser.sequence(
       programName("FallBots"),
@@ -18,6 +18,6 @@ object CmdLineParser {
   }
 
   def parseCommandLine(args: Array[String]): Option[Config] = {
-    OParser.parse(parser1, args, Config())
+    OParser.parse(argsParser, args, Config())
   }
 }

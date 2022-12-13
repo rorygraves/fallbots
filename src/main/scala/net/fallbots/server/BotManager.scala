@@ -37,7 +37,7 @@ class BotManager(gameManager: ActorRef) extends Actor {
 
   case class BotState(botId: Int, botRef: ActorRef, activeGame: Option[ActorRef])
 
-  var connectedBots = Map[Int, BotState]()
+  var connectedBots: Map[Int, BotState] = Map[Int, BotState]()
 
   def checkSecret(botId: Int, secret: String): Boolean = {
     // TODO - handle secrets properly

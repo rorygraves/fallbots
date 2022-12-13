@@ -17,13 +17,13 @@ class ClientHandlerActor(botManager: ActorRef) extends WebsocketHandlerActor {
     case BotManager.BMBotRegistrationResponse(status) =>
       val connected = status match {
         case BotManager.RRAccepted =>
-          down ! RegistrationResponse(true, "")
+          down ! RegistrationResponse(accepted = true, "")
           true
         case BotManager.RRRejected =>
-          down ! RegistrationResponse(false, "Secret rejected")
+          down ! RegistrationResponse(accepted = false, "Secret rejected")
           false
         case BotManager.RRAlreadyConnected =>
-          down ! RegistrationResponse(false, "Already connected")
+          down ! RegistrationResponse(accepted = false, "Already connected")
           false
       }
       if (connected)

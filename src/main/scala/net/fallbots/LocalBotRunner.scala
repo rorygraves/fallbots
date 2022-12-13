@@ -42,13 +42,12 @@ object LocalBotRunner {
       BoardPrinter.printBoard(game.currentBoard)
       roundResult match {
         case GameOver(res) => gameWinner = Some(res)
-        case GameRound(botStates) => {
+        case GameRound(botStates) =>
           nextActions = applyMovesToBot(bots, botStates)
           println("To apply:")
           println(nextActions.values.foreach(println))
-        }
       }
-      Thread.sleep(2000)
+      Thread.sleep(1000)
     }
 
     gameWinner.get
