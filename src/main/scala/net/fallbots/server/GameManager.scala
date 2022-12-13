@@ -10,11 +10,11 @@ object GameManager {
 
   def props(maxGames: Int): Props = Props(new GameManager(maxGames))
 
-  case class NewBotConnected(botId: Int, botRef: ActorRef)
+  final case class NewBotConnected(botId: Int, botRef: ActorRef)
 
   case object AwaitingGame
 
-  case class BotDisconnected(botId: Int, botRef: ActorRef)
+  final case class BotDisconnected(botId: Int, botRef: ActorRef)
 }
 
 /** The GameManger is responsible for game lifecycles.

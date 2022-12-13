@@ -11,10 +11,9 @@ object Board {
       walls: Map[Direction.Direction, WallType],
       bot: Option[BotState]
   ) {
-    def canMove(direction: Direction.Direction): Boolean = walls.get(direction).forall(_.canTraverse())
+    def canMove(direction: Direction.Direction): Boolean = walls.get(direction).forall(_.canTraverse)
 
     def isEmpty: Boolean = sqType == SquareType.Empty && bot.isEmpty
-
   }
 
   case class BotState(botId: BotId, direction: Direction.Direction)

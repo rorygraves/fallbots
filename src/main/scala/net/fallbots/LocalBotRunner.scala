@@ -45,7 +45,7 @@ object LocalBotRunner {
         case GameRound(botStates) =>
           nextActions = applyMovesToBot(bots, botStates)
           println("To apply:")
-          println(nextActions.values.foreach(println))
+          nextActions.values.foreach(println)
       }
       Thread.sleep(1000)
     }
