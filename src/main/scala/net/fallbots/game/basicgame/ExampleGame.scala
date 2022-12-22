@@ -56,7 +56,7 @@ class ExampleGame(initialBoard: Board, random: Random) extends Game {
   def currentBoard: Board          = _currentBoard
 
   @tailrec
-  final def applyMoves(moves: List[(BotId, BotAction)], board: Board): Board = {
+  private final def applyMoves(moves: List[(BotId, BotAction)], board: Board): Board = {
     moves match {
       case (botId, action) :: xs =>
         applyMoves(xs, board.applyBotAction(botId, action))
@@ -65,8 +65,8 @@ class ExampleGame(initialBoard: Board, random: Random) extends Game {
     }
   }
 
-  override def applyRound(moves: Map[BotId, BotAction]): GameRoundResult = {
-    val randomisedMoves = Random.shuffle(moves.toList)
+  override def applyRound(random: Random, moves: Map[BotId, BotAction]): GameRoundResult = {
+    val randomisedMoves = random.shuffle(moves.toList)
     _currentBoard = applyMoves(randomisedMoves, currentBoard)
 
     currentBoard.getWinner match {

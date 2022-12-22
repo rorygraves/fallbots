@@ -52,7 +52,7 @@ object BoardPrinter {
         print(sq.walls.get(Direction.North).map(northCharForWallType).getOrElse(' '))
         print("+")
       }
-      println
+      println()
     }
 
     def printMainRow(row: Seq[SquareState]): Unit = {
@@ -69,7 +69,7 @@ object BoardPrinter {
         print(sq.walls.get(Direction.South).map(southCharForWallType).getOrElse(' '))
         print("+")
       }
-      println
+      println()
     }
   }
 }

@@ -3,7 +3,11 @@ version := "0.1"
 val AkkaVersion     = "2.7.0"
 val AkkaHttpVersion = "10.4.0"
 
+val tomcatVersion = "10.0.27"
+
 enablePlugins(JavaAppPackaging)
+
+scalacOptions := Seq("-unchecked", "-deprecation")
 
 lazy val root = (project in file(".")).settings(
   inThisBuild(

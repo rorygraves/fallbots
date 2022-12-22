@@ -50,7 +50,7 @@ abstract class WebsocketHandlerActor extends Actor {
       FlowShape(textMsgFlow.in, pubSrc.out)
     })
 
-    sender ! flow
+    sender() ! flow
     context.become(mainReceive)
   }
 

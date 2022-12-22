@@ -11,14 +11,14 @@ import scala.util.Random
 
 object LocalBotRunner {
 
-  def notifyBotsOfGameStart(gameId: String, bots: Map[BotId, BotInterface]): Unit = {
+  private def notifyBotsOfGameStart(gameId: String, bots: Map[BotId, BotInterface]): Unit = {
     bots.values.foreach { bot =>
       bot.connected()
       bot.gameStarted(gameId)
 
     }
   }
-  def applyMovesToBot(bots: Map[BotId, BotInterface], botStates: Map[BotId, Board]): Map[BotId, BotAction] = {
+  private def applyMovesToBot(bots: Map[BotId, BotInterface], botStates: Map[BotId, Board]): Map[BotId, BotAction] = {
     bots
       .map { case (id, impl) =>
         impl.connected()
@@ -37,8 +37,8 @@ object LocalBotRunner {
 
     var gameWinner: Option[BotId] = None
     while (gameWinner.isEmpty) {
-      println("\n\nApplying round\n-----------------")
-      val roundResult: GameRoundResult = game.applyRound(nextActions)
+      println("\nApplying round\n-----------------")
+      val roundResult: GameRoundResult = game.applyRound(random, nextActions)
       BoardPrinter.printBoard(game.currentBoard)
       roundResult match {
         case GameOver(res) => gameWinner = Some(res)
@@ -47,7 +47,7 @@ object LocalBotRunner {
           println("To apply:")
           nextActions.values.foreach(println)
       }
-      Thread.sleep(1000)
+      Thread.sleep(250)
     }
 
     gameWinner.get

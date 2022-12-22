@@ -55,6 +55,8 @@ class BotRunner(hostname: String, port: Int, botId: Int, botSecret: String, bot:
         import net.fallbots.message.MessageImplicits._
         val decoded = read[FBMessage](message.text)
         incomingQueue.put(decoded)
+      case _ =>
+        println("HERE 1234")
       }
 
     // the Future[Done] is the materialized value of Sink.foreach

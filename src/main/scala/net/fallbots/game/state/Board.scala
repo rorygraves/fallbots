@@ -61,9 +61,7 @@ case class Board(
 
     def moveBot(direction: Direction.Direction): Board = {
 
-      if (!currentSq.canMove(direction))
-        this
-      else {
+      if (currentSq.canMove(direction)) {
         val newPos = direction.nextPosition(position)
 
         squares.get(newPos) match {
@@ -74,9 +72,12 @@ case class Board(
             val newBots    = bots + (botId -> newPos)
             this.copy(squares = newSquares, bots = newBots)
           case _ => // we cannot move there
+            println(s"CANT Move $botId in $direction")
+
             this
         }
-      }
+      } else
+        this // no change to board state
     }
 
     action.moveAction match {
@@ -85,7 +86,7 @@ case class Board(
       case MoveAction.RotateLeft =>
         withNewDirection(botState.direction.rotateLeft)
       case MoveAction.RotateRight =>
-        withNewDirection(botState.direction.rotateLeft)
+        withNewDirection(botState.direction.rotateRight)
       case MoveAction.Forward =>
         moveBot(botState.direction)
       case MoveAction.Backwards =>
@@ -109,5 +110,4 @@ case class Board(
         throw new IllegalStateException(s"Board position $pos does not exist")
     }
   }
-
 }

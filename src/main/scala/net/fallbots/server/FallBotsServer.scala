@@ -35,7 +35,7 @@ object FallBotsServer {
 
     routing.startServer(config.port)
 
-    println("HERE")
+    println("Starting test bot")
     Thread.sleep(1000)
 
     new BotRunner("localhost", config.port, 1, "abc", new SimpleBot(BotId(1))).run()

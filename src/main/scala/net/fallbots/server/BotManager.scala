@@ -1,6 +1,6 @@
 package net.fallbots.server
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Props, Terminated}
+import akka.actor.{Actor, ActorRef, ActorSystem, PoisonPill, Props, Terminated}
 import net.fallbots.server.BotManager.{
   BMBotRegistration,
   BMBotRegistrationResponse,
@@ -56,15 +56,17 @@ class BotManager(gameManager: ActorRef) extends Actor {
 
       }
     case BMBotRegistration(botId, secret) =>
+      val botActor = sender()
       if (connectedBots.contains(botId))
-        sender ! BMBotRegistrationResponse(RRAlreadyConnected)
+        botActor ! BMBotRegistrationResponse(RRAlreadyConnected)
       else if (!checkSecret(botId, secret))
-        sender ! BMBotRegistrationResponse(RRRejected)
+        botActor ! BMBotRegistrationResponse(RRRejected)
       else {
-        sender ! BMBotRegistrationResponse(RRAccepted)
-        connectedBots += botId -> BotState(botId, sender, None)
-        gameManager ! GameManager.NewBotConnected(botId, sender)
-        context.watch(sender)
+        botActor ! BMBotRegistrationResponse(RRAccepted)
+        connectedBots += botId -> BotState(botId, botActor, None)
+        gameManager ! GameManager.NewBotConnected(botId, botActor)
+        botActor ! PoisonPill
+        context.watch(botActor)
       }
   }
 }

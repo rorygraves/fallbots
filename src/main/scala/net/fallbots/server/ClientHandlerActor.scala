@@ -53,4 +53,9 @@ class ClientHandlerActor(botManager: ActorRef) extends WebsocketHandlerActor {
     case m =>
       println("Got message " + m)
   }
+
+  override def postStop(): Unit = {
+    println("POST STOP Client handler")
+    down ! PoisonPill
+  }
 }

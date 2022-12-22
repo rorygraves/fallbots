@@ -42,7 +42,7 @@ class ClientHandlerSpec extends AnyWordSpec with Matchers with Directives with S
           }
 
           writeMsg(RegisterMessage(1, "abc"))
-          expectMsg(RegistrationResponse(true, ""))
+          expectMsg(RegistrationResponse(accepted = true, ""))
         }
     }
   }
