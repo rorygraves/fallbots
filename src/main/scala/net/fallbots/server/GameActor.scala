@@ -1,33 +1,43 @@
 package net.fallbots.server
 
-import akka.actor.{Actor, ActorRef, Props}
+import akka.actor.{Actor, ActorRef, Props, Timers}
 import net.fallbots.game.basicgame.BoardPrinter
 import net.fallbots.game.{Game, GameDef, GameRoundResult}
 import net.fallbots.game.state.{Board, BotAction}
-import net.fallbots.message.GameMessage
 import net.fallbots.message.GameMessage.GameOver
-import net.fallbots.server.GameActor.{BotMoveResponse, GameAssigned}
+import net.fallbots.server.GameActor.{BotMoveResponse, GameAssigned, RoundTimeout}
 import net.fallbots.shared.BotId
 import org.slf4j.LoggerFactory
+import scala.concurrent.duration.DurationInt
 
 import scala.util.Random
 
 object GameActor {
+  // messages
   case class GameAssigned(gameId: String, gameRef: ActorRef)
 
-  case class BotMoveResponse(botAction: BotAction)
-  def props(gameId: String, gameDef: GameDef, botRefs: Map[BotId, ActorRef]): Props = Props(
-    new GameActor(gameId, gameDef, botRefs)
+  case class BotMoveRequest(round: Int, board: Board)
+  case class BotMoveResponse(round: Int, botAction: BotAction)
+
+  case class RoundTimeout(roundId: Int)
+
+  def props(gameId: String, gameDef: GameDef, botRefs: Map[BotId, ActorRef], maxTimePerRoundMs: Int): Props = Props(
+    new GameActor(gameId, gameDef, botRefs, maxTimePerRoundMs)
   )
 }
 
-class GameActor(gameId: String, gameDef: GameDef, botRefs: Map[BotId, ActorRef]) extends Actor {
+class GameActor(gameId: String, gameDef: GameDef, botRefs: Map[BotId, ActorRef], maxTimePerRoundMs: Int)
+    extends Actor
+    with Timers {
 
   private val random              = new Random()
   private val logger              = LoggerFactory.getLogger(s"GameActor:$gameId")
   private val refToBotLookup      = botRefs.toList.map(v => v._2 -> v._1).toMap
   private var _game: Option[Game] = None
   def game                        = _game.getOrElse(throw new IllegalStateException("game not initialised"))
+
+  var currentRound                      = 1
+  var roundMoves: Map[BotId, BotAction] = Map.empty
 
   startGame()
 
@@ -40,16 +50,26 @@ class GameActor(gameId: String, gameDef: GameDef, botRefs: Map[BotId, ActorRef])
     this._game = Some(game)
     BoardPrinter.printBoard(game.currentBoard)
     sendGameStatesToBots(initialStates)
+    scheduleRoundTimeout()
   }
 
-  var roundMoves: Map[BotId, BotAction] = Map.empty
   override def receive: Receive = {
-    case BotMoveResponse(botAction: BotAction) =>
+    case RoundTimeout(roundId) =>
+      if (roundId == currentRound) {
+        logger.info("Round timeout triggered - apply received moves")
+        applyRound()
+      }
+    case BotMoveResponse(round, botAction: BotAction) =>
       refToBotLookup.get(sender()) match {
         case Some(botId) =>
-          roundMoves = roundMoves + (botId -> botAction)
-          if (roundMoves.size == botRefs.size) {
-            applyRound()
+          if (round != currentRound)
+            logger.warn(s"Move for $botId rejected - wrong round")
+          else {
+
+            roundMoves = roundMoves + (botId -> botAction)
+            if (roundMoves.size == botRefs.size) {
+              applyRound()
+            }
           }
         case None =>
           logger.error(s"Illegal state - got message from ${sender()} and cannot map to bot")
@@ -58,7 +78,11 @@ class GameActor(gameId: String, gameDef: GameDef, botRefs: Map[BotId, ActorRef])
       logger.error("Boom ! " + m)
   }
 
+  def scheduleRoundTimeout(): Unit = {
+    timers.startSingleTimer(RoundTimeout(currentRound), RoundTimeout(currentRound), maxTimePerRoundMs.millis)
+  }
   def applyRound(): Unit = {
+    timers.cancel(RoundTimeout(currentRound))
     logger.info("Applying round")
     game.applyRound(random, roundMoves) match {
       case GameRoundResult.GameOver(winnerOpt) =>
@@ -68,6 +92,8 @@ class GameActor(gameId: String, gameDef: GameDef, botRefs: Map[BotId, ActorRef])
         context.stop(self)
       case GameRoundResult.GameRound(newStates) =>
         roundMoves = Map.empty
+        currentRound = currentRound + 1
+        scheduleRoundTimeout()
         sendGameStatesToBots(newStates)
     }
     BoardPrinter.printBoard(game.currentBoard)
@@ -77,7 +103,7 @@ class GameActor(gameId: String, gameDef: GameDef, botRefs: Map[BotId, ActorRef])
     states.foreach { case (botId, board) =>
       botRefs.get(botId) match {
         case Some(ref) =>
-          ref ! GameMessage.GameMoveRequest(board)
+          ref ! GameActor.BotMoveRequest(currentRound, board)
         case None =>
           logger.error(s"Game state send to $botId - bot ref not found")
       }

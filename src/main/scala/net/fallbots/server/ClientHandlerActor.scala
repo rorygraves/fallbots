@@ -75,9 +75,11 @@ abstract class ClientHandlerActor(botManager: ActorRef, gameManager: ActorRef) e
 
     case GameMessage.FBRequestGame =>
       gameManager ! GameManager.RequestGame(id, self)
-    case GameMessage.GameMoveResponse(action) =>
-      sendToGame(GameActor.BotMoveResponse(action))
+    case GameMessage.GameMoveResponse(round, action) =>
+      sendToGame(GameActor.BotMoveResponse(round, action))
 
+    case GameActor.BotMoveRequest(round, board) =>
+      send(GameMessage.GameMoveRequest(round, board))
     case _: FBClientGameMessage =>
       logger.error("Unhandled game message")
     case m: FBClientMessage =>

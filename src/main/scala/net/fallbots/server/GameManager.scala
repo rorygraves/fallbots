@@ -50,7 +50,7 @@ class GameManager(minPlayersPerGame: Int) extends Actor {
       val gameId = nextGameId.toString
       nextGameId = nextGameId + 1
 
-      val gameRef = context.actorOf(GameActor.props(gameId, ExampleGame, players.toMap))
+      val gameRef = context.actorOf(GameActor.props(gameId, ExampleGame, players.toMap, 2000))
       activeGames = activeGames + (gameId -> gameRef)
     }
   }

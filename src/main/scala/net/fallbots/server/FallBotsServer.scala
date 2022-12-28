@@ -1,7 +1,7 @@
 package net.fallbots.server
 
 import akka.actor.ActorSystem
-import net.fallbots.bot.{BotRunner, SimpleBot}
+import net.fallbots.bot.{BotRunner, NoOpBot, SimpleBot}
 import net.fallbots.server.akkahttp.AkkaHttpServer
 import net.fallbots.server.cmdline.{CmdLineParser, Config, ServerImpl}
 import net.fallbots.server.jetty.JettyServer

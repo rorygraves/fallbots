@@ -143,10 +143,10 @@ class BotRunner(hostname: String, port: Int, botId: Int, botSecret: String, bot:
     while (!gameOver) {
       val msg = receiveMessage()
       msg match {
-        case GameMessage.GameMoveRequest(board) =>
+        case GameMessage.GameMoveRequest(round, board) =>
           logger.info("move request")
           val action = bot.getMove(board)
-          sendMessage(GameMessage.GameMoveResponse(action))
+          sendMessage(GameMessage.GameMoveResponse(round, action))
         case GameMessage.GameOver(winner) =>
           bot.gameEnded()
           val winnerStr = winner.map(i => s"Bot $i").getOrElse("None")

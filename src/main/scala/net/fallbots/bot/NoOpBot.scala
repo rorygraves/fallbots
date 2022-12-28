@@ -11,6 +11,7 @@ class NoOpBot(@unused botId: BotId) extends BotInterface {
   override def gameStarted(gameId: String): Unit = {}
 
   override def getMove(state: Board): BotAction = {
+    Thread.sleep(100000)
     BotAction.None
   }
 

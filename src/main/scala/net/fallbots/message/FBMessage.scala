@@ -74,7 +74,7 @@ object GameMessage {
 
   case class GameOver(winner: Option[Int]) extends FBMessage with FBServerGameMessage
 
-  case class GameMoveRequest(board: Board)       extends FBMessage with FBServerGameMessage
-  case class GameMoveResponse(action: BotAction) extends FBMessage with FBClientGameMessage
+  case class GameMoveRequest(round: Int, board: Board)       extends FBMessage with FBServerGameMessage
+  case class GameMoveResponse(round: Int, action: BotAction) extends FBMessage with FBClientGameMessage
 
 }
