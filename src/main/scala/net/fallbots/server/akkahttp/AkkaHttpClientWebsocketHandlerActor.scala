@@ -1,20 +1,28 @@
-package net.fallbots.server
+package net.fallbots.server.akkahttp
 
-import akka.actor.{Actor, ActorSystem}
+import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props}
 import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
 import akka.stream.scaladsl.GraphDSL.Implicits._
 import akka.stream.scaladsl.{Flow, GraphDSL, Keep, Sink, Source}
 import akka.stream.{FlowShape, OverflowStrategy}
 import net.fallbots.message.FBMessage
-import net.fallbots.server.Routing.GetWebsocketFlow
+import net.fallbots.server.ClientHandlerActor
+import net.fallbots.server.akkahttp.AkkaHttpServer.GetWebsocketFlow
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
+object AkkaHttpClientWebsocketHandlerActor {
+  def props(botManager: ActorRef, gameManager: ActorRef): Props = Props(
+    new AkkaHttpClientWebsocketHandlerActor(botManager, gameManager)
+  )
+}
+
 /** Wrap all the logic of setting up message flows for the websocket connection. Subclasses simply need to implement
   * 'mainReceive to do their logic. To send a message to the socket use down ! FPMessageInstance.
   */
-abstract class WebsocketHandlerActor extends Actor {
+class AkkaHttpClientWebsocketHandlerActor(botManager: ActorRef, gameManager: ActorRef)
+    extends ClientHandlerActor(botManager, gameManager) {
 
   implicit val as: ActorSystem      = context.system
   implicit val ec: ExecutionContext = context.system.dispatcher
@@ -24,11 +32,14 @@ abstract class WebsocketHandlerActor extends Actor {
     .toMat(Sink.asPublisher(fanout = false))(Keep.both)
     .run()
 
+  override def send(msg: FBMessage): Unit = {
+    down ! msg
+  }
   override def receive: Receive = initialReceive
 
   import upickle.default._
 
-  def initialReceive: Receive = { case GetWebsocketFlow =>
+  private def initialReceive: Receive = { case GetWebsocketFlow =>
     val flow = Flow.fromGraph(GraphDSL.create() { implicit b =>
       val textMsgFlow = b.add(
         Flow[Message]
@@ -54,5 +65,9 @@ abstract class WebsocketHandlerActor extends Actor {
     context.become(mainReceive)
   }
 
-  def mainReceive: Receive
+  override def shutdown(): Unit = {
+    println("Client handler shutting down, trigger close of websocket")
+    down ! PoisonPill
+  }
+
 }

@@ -71,7 +71,7 @@ class ExampleGame(initialBoard: Board, random: Random) extends Game {
 
     currentBoard.getWinner match {
       case Some(winner) =>
-        GameRoundResult.GameOver(winner)
+        GameRoundResult.GameOver(Some(winner))
       case None =>
         GameRoundResult.GameRound(ExampleGame.generatePlayerInfos(currentBoard))
     }

@@ -80,16 +80,16 @@ case class Board(
         this // no change to board state
     }
 
-    action.moveAction match {
-      case MoveAction.None =>
+    action match {
+      case BotAction.None =>
         this
-      case MoveAction.RotateLeft =>
+      case BotAction.RotateLeft =>
         withNewDirection(botState.direction.rotateLeft)
-      case MoveAction.RotateRight =>
+      case BotAction.RotateRight =>
         withNewDirection(botState.direction.rotateRight)
-      case MoveAction.Forward =>
+      case BotAction.Forward =>
         moveBot(botState.direction)
-      case MoveAction.Backwards =>
+      case BotAction.Backwards =>
         moveBot(Direction.opposite(botState.direction))
 
     }

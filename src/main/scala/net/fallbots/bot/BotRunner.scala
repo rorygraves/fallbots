@@ -8,7 +8,7 @@ import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import net.fallbots.bot.BotRunner.ClosedException
-import net.fallbots.message.{FBMessage, RegisterMessage, RegistrationResponse}
+import net.fallbots.message._
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue, TimeUnit}
@@ -33,7 +33,7 @@ object BotRunner {
   * @param bot
   *   The bot implementation.
   */
-class BotRunner(hostname: String, port: Int, botId: Int, botSecret: String, bot: BotInterface) {
+class BotRunner(hostname: String, port: Int, botId: Int, botSecret: String, bot: BotInterface) extends Runnable {
 
   val logger: Logger           = LoggerFactory.getLogger(s"BotRunner-$botId")
   implicit val as: ActorSystem = ActorSystem.apply("bot-runner")
@@ -51,12 +51,16 @@ class BotRunner(hostname: String, port: Int, botId: Int, botSecret: String, bot:
 
     // each message received is passed to the incomingQueue for consumption by the bot.
     val msgSink: Sink[Message, Future[Done]] =
-      Sink.foreach { case message: TextMessage.Strict =>
-        import net.fallbots.message.MessageImplicits._
-        val decoded = read[FBMessage](message.text)
-        incomingQueue.put(decoded)
-      case _ =>
-        println("HERE 1234")
+      Sink.foreach {
+        case message: TextMessage.Strict =>
+          import net.fallbots.message.MessageImplicits._
+          val decoded = read[FBMessage](message.text)
+          if (decoded == ServerPing)
+            sendMessage(ClientPong)
+          else
+            incomingQueue.put(decoded)
+        case _ =>
+          println("HERE 1234")
       }
 
     // the Future[Done] is the materialized value of Sink.foreach
@@ -116,12 +120,41 @@ class BotRunner(hostname: String, port: Int, botId: Int, botSecret: String, bot:
 
   def botLoop(): Unit = {
     logger.info("Starting main bot loop")
+    sendMessage(GameMessage.FBRequestGame)
     while (true) {
       val msg = receiveMessage()
       msg match {
+        case GameMessage.AwaitingGame =>
+          logger.info("Awaiting game")
+        case GameAssigned(gameId) =>
+          gameLoop(gameId)
+
+          // game completed request a new game
+          sendMessage(GameMessage.FBRequestGame)
         case _ => logger.info("Unhandled message: " + msg)
       }
     }
+  }
+
+  private def gameLoop(gameId: String): Unit = {
+    logger.info(s"G$gameId assigned")
+    var gameOver = false
+    bot.gameStarted(gameId)
+    while (!gameOver) {
+      val msg = receiveMessage()
+      msg match {
+        case GameMessage.GameMoveRequest(board) =>
+          logger.info("move request")
+          val action = bot.getMove(board)
+          sendMessage(GameMessage.GameMoveResponse(action))
+        case GameMessage.GameOver(winner) =>
+          bot.gameEnded()
+          val winnerStr = winner.map(i => s"Bot $i").getOrElse("None")
+          logger.info(s"Game over winner: $winnerStr")
+          gameOver = true
+      }
+    }
+
   }
 
   /** Send a message to the server
@@ -130,21 +163,21 @@ class BotRunner(hostname: String, port: Int, botId: Int, botSecret: String, bot:
     *   The target message to send
     */
   private def sendMessage(message: FBMessage): Unit = {
-    logger.info(s"Sending message: $message")
+    logger.debug(s"Sending message: $message")
     import net.fallbots.message.MessageImplicits._
-    println("Outgoing queue = " + outgoingQueue)
-    println("message = " + message)
-    println("  msg = " + write(message))
     outgoingQueue.offer(TextMessage(write(message)))
   }
 
   /** Wait for a message from the server
     */
   private def receiveMessage(): FBMessage = {
-    incomingQueue.take()
+    val m = incomingQueue.take()
+    logger.debug("Got message from server: " + m)
+    m
   }
 
-  def run(): Unit = {
+  override def run(): Unit = {
+    logger.info("Starting")
     connect()
     authenticate()
     // notify the bot that we are successfully connected

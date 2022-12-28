@@ -1,13 +1,8 @@
 package net.fallbots.server
 
-import akka.actor.{Actor, ActorRef, ActorSystem, PoisonPill, Props, Terminated}
-import net.fallbots.server.BotManager.{
-  BMBotRegistration,
-  BMBotRegistrationResponse,
-  RRAccepted,
-  RRAlreadyConnected,
-  RRRejected
-}
+import akka.actor.{Actor, ActorRef, ActorSystem, Props, Terminated}
+import net.fallbots.server.BotManager._
+import net.fallbots.shared.BotId
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext
@@ -16,7 +11,7 @@ object BotManager {
 
   def props(gameManager: ActorRef): Props = Props(new BotManager(gameManager))
 
-  case class BMBotRegistration(botId: Int, secret: String)
+  case class BMBotRegistration(botId: BotId, secret: String)
 
   trait RegResponse
   case object RRAccepted         extends RegResponse
@@ -35,11 +30,11 @@ class BotManager(gameManager: ActorRef) extends Actor {
   implicit val as: ActorSystem      = context.system
   implicit val ec: ExecutionContext = context.system.dispatcher
 
-  case class BotState(botId: Int, botRef: ActorRef, activeGame: Option[ActorRef])
+  case class BotState(botId: BotId, botRef: ActorRef, activeGame: Option[ActorRef])
 
-  var connectedBots: Map[Int, BotState] = Map[Int, BotState]()
+  private var connectedBots = Map[BotId, BotState]()
 
-  def checkSecret(botId: Int, secret: String): Boolean = {
+  def checkSecret(botId: BotId, secret: String): Boolean = {
     // TODO - handle secrets properly
     secret == "abc"
   }
@@ -64,8 +59,6 @@ class BotManager(gameManager: ActorRef) extends Actor {
       else {
         botActor ! BMBotRegistrationResponse(RRAccepted)
         connectedBots += botId -> BotState(botId, botActor, None)
-        gameManager ! GameManager.NewBotConnected(botId, botActor)
-        botActor ! PoisonPill
         context.watch(botActor)
       }
   }

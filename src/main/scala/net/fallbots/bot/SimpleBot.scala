@@ -1,7 +1,7 @@
 package net.fallbots.bot
 
 import net.fallbots.game.state.Direction.{East, North, South, West}
-import net.fallbots.game.state.{Board, BotAction, MoveAction}
+import net.fallbots.game.state.{Board, BotAction}
 import net.fallbots.shared.BotId
 
 class SimpleBot(botId: BotId) extends BotInterface {
@@ -22,9 +22,9 @@ class SimpleBot(botId: BotId) extends BotInterface {
 
     val currentDir = state.squares(currentPos).bot.get.direction
     if (currentDir == targetDir)
-      BotAction(botId, MoveAction.Forward)
+      BotAction.Forward
     else
-      BotAction(botId, MoveAction.RotateLeft)
+      BotAction.RotateLeft
   }
 
   override def gameEnded(): Unit = {}

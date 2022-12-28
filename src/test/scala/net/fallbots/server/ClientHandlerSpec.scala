@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Directives
 import akka.http.scaladsl.testkit.{ScalatestRouteTest, WSProbe}
 import net.fallbots.message.{FBMessage, RegisterMessage, RegistrationResponse}
+import net.fallbots.server.akkahttp.AkkaHttpServer
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -23,7 +24,7 @@ class ClientHandlerSpec extends AnyWordSpec with Matchers with Directives with S
       val botManager  = as.actorOf(BotManager.props(gameManager))
 
       import net.fallbots.message.MessageImplicits._
-      val routing = new Routing(as, botManager)
+      val routing = new AkkaHttpServer(as, botManager, gameManager)
 
       // WS creates a WebSocket request for testing
       WS("/connect", wsClient.flow) ~> routing.gameServerRouting ~>

@@ -17,7 +17,7 @@ object Direction {
       throw new IllegalStateException(s"0 <= $i <=3 must be true here")
   }
 
-  abstract class Direction(card: Int, xOff: Int, yOff: Int) {
+  sealed abstract class Direction(card: Int, xOff: Int, yOff: Int) {
     def nextPosition(position: Position): Position = Position(position.x + xOff, position.y + yOff)
 
     def rotateLeft: Direction  = fromInt((card + 3) % 4)

@@ -1,5 +1,12 @@
 package net.fallbots.game.state
 
-import net.fallbots.shared.BotId
+object BotAction {
 
-case class BotAction(botId: BotId, moveAction: MoveAction)
+  case object None        extends BotAction
+  case object Forward     extends BotAction
+  case object Backwards   extends BotAction
+  case object RotateLeft  extends BotAction
+  case object RotateRight extends BotAction
+}
+
+sealed trait BotAction

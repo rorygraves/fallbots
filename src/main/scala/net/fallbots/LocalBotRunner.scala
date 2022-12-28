@@ -23,19 +23,17 @@ object LocalBotRunner {
       .map { case (id, impl) =>
         impl.connected()
         impl.gameStarted("1")
-        impl.getMove(botStates.getOrElse(id, throw new IllegalStateException(s"No info found for bot $id")))
+        id -> impl.getMove(botStates.getOrElse(id, throw new IllegalStateException(s"No info found for bot $id")))
       }
-      .map(v => v.botId -> v)
-      .toMap
   }
 
-  def runGame(gameId: String, gameDef: GameDef, random: Random, bots: Map[BotId, BotInterface]): BotId = {
+  def runGame(gameId: String, gameDef: GameDef, random: Random, bots: Map[BotId, BotInterface]): Option[BotId] = {
     val (game, initialStates) = gameDef.createGame(random, bots.keySet.toList)
 
     notifyBotsOfGameStart(gameId, bots)
     var nextActions = applyMovesToBot(bots, initialStates)
 
-    var gameWinner: Option[BotId] = None
+    var gameWinner: Option[Option[BotId]] = None
     while (gameWinner.isEmpty) {
       println("\nApplying round\n-----------------")
       val roundResult: GameRoundResult = game.applyRound(random, nextActions)

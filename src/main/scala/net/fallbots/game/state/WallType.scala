@@ -1,6 +1,6 @@
 package net.fallbots.game.state
 
-trait WallType {
+sealed trait WallType {
   def canTraverse: Boolean
 
 }
