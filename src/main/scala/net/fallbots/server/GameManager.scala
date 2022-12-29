@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import net.fallbots.game.basicgame.ExampleGame
 import net.fallbots.message.GameMessage
 import net.fallbots.server.GameManager.{BotDisconnected, RequestGame}
+import net.fallbots.server.config.Config
 import net.fallbots.shared.BotId
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -12,7 +13,9 @@ import scala.util.Random
 
 object GameManager {
 
-  def props(minPlayersPerGame: Int): Props = Props(new GameManager(minPlayersPerGame))
+  def props(config: Config.GameServerConfig, gameConfig: Config.GameConfig): Props = Props(
+    new GameManager(config, gameConfig)
+  )
 
   final case class RequestGame(botId: BotId, botRef: ActorRef)
   final case class BotDisconnected(botId: BotId, botRef: ActorRef)
@@ -22,7 +25,7 @@ object GameManager {
 
 /** The GameManger is responsible for game lifecycles.
   */
-class GameManager(minPlayersPerGame: Int) extends Actor {
+class GameManager(config: Config.GameServerConfig, gameConfig: Config.GameConfig) extends Actor {
   val logger: Logger                = LoggerFactory.getLogger("GameManager")
   implicit val as: ActorSystem      = context.system
   implicit val ec: ExecutionContext = context.system.dispatcher
@@ -43,14 +46,14 @@ class GameManager(minPlayersPerGame: Int) extends Actor {
   }
 
   def assignGames(): Unit = {
-    if (waiting.size >= minPlayersPerGame) {
-      val players = waiting.take(minPlayersPerGame)
-      waiting = waiting.drop(minPlayersPerGame)
+    if (waiting.size >= config.minPlayersPerGame) {
+      val players = waiting.take(config.minPlayersPerGame)
+      waiting = waiting.drop(config.minPlayersPerGame)
 
       val gameId = nextGameId.toString
       nextGameId = nextGameId + 1
 
-      val gameRef = context.actorOf(GameActor.props(gameId, ExampleGame, players.toMap, 2000))
+      val gameRef = context.actorOf(GameActor.props(gameId, ExampleGame, players.toMap, gameConfig))
       activeGames = activeGames + (gameId -> gameRef)
     }
   }

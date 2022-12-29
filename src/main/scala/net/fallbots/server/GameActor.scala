@@ -6,10 +6,11 @@ import net.fallbots.game.{Game, GameDef, GameRoundResult}
 import net.fallbots.game.state.{Board, BotAction}
 import net.fallbots.message.GameMessage.GameOver
 import net.fallbots.server.GameActor.{BotMoveResponse, GameAssigned, RoundTimeout}
+import net.fallbots.server.config.Config
 import net.fallbots.shared.BotId
 import org.slf4j.LoggerFactory
-import scala.concurrent.duration.DurationInt
 
+import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
 object GameActor {
@@ -21,12 +22,12 @@ object GameActor {
 
   case class RoundTimeout(roundId: Int)
 
-  def props(gameId: String, gameDef: GameDef, botRefs: Map[BotId, ActorRef], maxTimePerRoundMs: Int): Props = Props(
-    new GameActor(gameId, gameDef, botRefs, maxTimePerRoundMs)
+  def props(gameId: String, gameDef: GameDef, botRefs: Map[BotId, ActorRef], config: Config.GameConfig): Props = Props(
+    new GameActor(gameId, gameDef, botRefs, config)
   )
 }
 
-class GameActor(gameId: String, gameDef: GameDef, botRefs: Map[BotId, ActorRef], maxTimePerRoundMs: Int)
+class GameActor(gameId: String, gameDef: GameDef, botRefs: Map[BotId, ActorRef], config: Config.GameConfig)
     extends Actor
     with Timers {
 
@@ -79,7 +80,7 @@ class GameActor(gameId: String, gameDef: GameDef, botRefs: Map[BotId, ActorRef],
   }
 
   def scheduleRoundTimeout(): Unit = {
-    timers.startSingleTimer(RoundTimeout(currentRound), RoundTimeout(currentRound), maxTimePerRoundMs.millis)
+    timers.startSingleTimer(RoundTimeout(currentRound), RoundTimeout(currentRound), config.maxTimePerRoundMs.millis)
   }
   def applyRound(): Unit = {
     timers.cancel(RoundTimeout(currentRound))

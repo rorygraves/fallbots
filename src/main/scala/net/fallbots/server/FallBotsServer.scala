@@ -1,9 +1,10 @@
 package net.fallbots.server
 
 import akka.actor.ActorSystem
-import net.fallbots.bot.{BotRunner, NoOpBot, SimpleBot}
+import net.fallbots.bot.{BotRunner, SimpleBot}
 import net.fallbots.server.akkahttp.AkkaHttpServer
-import net.fallbots.server.cmdline.{CmdLineParser, Config, ServerImpl}
+import net.fallbots.server.cmdline.{CmdLineParser, ServerImpl}
+import net.fallbots.server.config.Config
 import net.fallbots.server.jetty.JettyServer
 import net.fallbots.shared.BotId
 import org.slf4j.{Logger, LoggerFactory}
@@ -24,12 +25,12 @@ object FallBotsServer {
       case _ =>
       // arguments are bad, error message will have been displayed
     }
-
   }
-  def runServer(config: Config): Unit = {
+
+  def runServer(config: Config.Config): Unit = {
     implicit val as: ActorSystem = ActorSystem("main")
 
-    val gameManager = as.actorOf(GameManager.props(2), "GameManager")
+    val gameManager = as.actorOf(GameManager.props(config.gaemServerConfig, config.gameConfig), "GameManager")
     val botManager  = as.actorOf(BotManager.props(gameManager), "BotManager")
 
     logger.info("FallBots Server starting")

@@ -5,6 +5,7 @@ import akka.http.scaladsl.server.Directives
 import akka.http.scaladsl.testkit.{ScalatestRouteTest, WSProbe}
 import net.fallbots.message.{FBMessage, RegisterMessage, RegistrationResponse}
 import net.fallbots.server.akkahttp.AkkaHttpServer
+import net.fallbots.server.config.Config
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -20,7 +21,8 @@ class ClientHandlerSpec extends AnyWordSpec with Matchers with Directives with S
       // create a testing probe representing the client-side
       val wsClient = WSProbe()
 
-      val gameManager = as.actorOf(GameManager.props(1))
+      val config      = Config.default
+      val gameManager = as.actorOf(GameManager.props(config.gaemServerConfig, config.gameConfig))
       val botManager  = as.actorOf(BotManager.props(gameManager))
 
       import net.fallbots.message.MessageImplicits._

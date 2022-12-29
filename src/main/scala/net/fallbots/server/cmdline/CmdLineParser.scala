@@ -1,5 +1,6 @@
 package net.fallbots.server.cmdline
 
+import net.fallbots.server.config.Config
 import scopt.OParser
 
 object CmdLineParser {
@@ -7,7 +8,7 @@ object CmdLineParser {
   implicit val serverImplRead: scopt.Read[ServerImpl.Value] =
     scopt.Read.reads(ServerImpl.withName)
 
-  private val builder = OParser.builder[Config]
+  private val builder = OParser.builder[Config.Config]
   private val argsParser = {
     import builder._
     OParser.sequence(
@@ -18,13 +19,23 @@ object CmdLineParser {
         .required()
         .action((x, c) => c.copy(port = x))
         .text("The port to run the server http endpoint on"),
+      opt[Int]("maxTimePerRoundMs")
+        .action((x, c) => c.copy(gameConfig = c.gameConfig.copy(maxTimePerRoundMs = x)))
+        .validate(v => if (v < 100) Left("must be >=100") else Right(()))
+        .text(
+          s"The maximum number of milliseconds per round (bots taking too long will be ignored - Default ${Config.DefaultMaxTimePerRoundMs})"
+        ),
+      opt[Int]("naxRoundsPerGame")
+        .action((x, c) => c.copy(gameConfig = c.gameConfig.copy(maxRoundsPerGame = x)))
+        .text(s"The maximum number of rounds a game can last - Default ${Config.DefaultMaxRoundsPerGame}")
+        .validate(v => if (v < 1) Left("must be >=1") else Right(())),
       opt[ServerImpl.Impl]('s', "serverImpl")
         .action((x, c) => c.copy(serverImpl = x))
         .text("Select the server websocket implementation (AkkaHttp, Jetty)")
     )
   }
 
-  def parseCommandLine(args: Array[String]): Option[Config] = {
-    OParser.parse(argsParser, args, Config())
+  def parseCommandLine(args: Array[String]): Option[Config.Config] = {
+    OParser.parse(argsParser, args, Config.default)
   }
 }
