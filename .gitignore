@@ -26,3 +26,6 @@ target/
 
 # general
 *.class
+
+# created by jetty
+tmpwebapp/

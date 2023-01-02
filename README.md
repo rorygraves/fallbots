@@ -24,7 +24,7 @@ Can you write a bot to outwit your opponents and win the race?
 
 ## Current state
 
-This project has only just started development.  Nothing works yet (at all).
+This project has only just started development.  We are working towarda a PoC level implemenation.  This means that things will be incomplete, undertested and will break.
 If you are excited to get this going - come and help :)
 
 ## Basic Design
@@ -57,6 +57,8 @@ You will need:
 
 Pick your favorite IDE :)
 
-The main server class FallBotServer current starts a test bot.
-Bots are implemented using BotInterface - see SampleBotApp for examples.
+Start by running `TestServer` in the fallbots-test module.  This spins up a test game server and a couple of bots and has
+them complete.  The defaults mean that it should just run.
+
+You can look at SampleBot for examples on how bots are implemented.
 
