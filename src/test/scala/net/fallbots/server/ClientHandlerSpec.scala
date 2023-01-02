@@ -22,7 +22,7 @@ class ClientHandlerSpec extends AnyWordSpec with Matchers with Directives with S
       val wsClient = WSProbe()
 
       val config      = Config.default
-      val gameManager = as.actorOf(GameManager.props(config.gaemServerConfig, config.gameConfig))
+      val gameManager = as.actorOf(GameManager.props(config.gameServerConfig, config.gameConfig))
       val botManager  = as.actorOf(BotManager.props(gameManager))
 
       import net.fallbots.message.MessageImplicits._

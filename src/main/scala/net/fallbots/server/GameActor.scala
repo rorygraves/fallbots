@@ -31,14 +31,17 @@ class GameActor(gameId: String, gameDef: GameDef, botRefs: Map[BotId, ActorRef],
     extends Actor
     with Timers {
 
-  private val random              = new Random()
-  private val logger              = LoggerFactory.getLogger(s"GameActor:$gameId")
-  private val refToBotLookup      = botRefs.toList.map(v => v._2 -> v._1).toMap
-  private var _game: Option[Game] = None
-  def game                        = _game.getOrElse(throw new IllegalStateException("game not initialised"))
+  val randomSeed = config.gameRandomSeed.getOrElse(Random.nextInt())
+  // initialise the rng to the fixed seed if given otherwise default to an standard random
+  private val random = new Random(randomSeed)
 
-  var currentRound                      = 1
-  var roundMoves: Map[BotId, BotAction] = Map.empty
+  private val logger         = LoggerFactory.getLogger(s"GameActor:$gameId")
+  private val refToBotLookup = botRefs.toList.map(v => v._2 -> v._1).toMap
+
+  private var _game: Option[Game] = None
+  private def game                = _game.getOrElse(throw new IllegalStateException("game not initialised"))
+
+  private var roundMoves: Map[BotId, BotAction] = Map.empty
 
   startGame()
 
@@ -47,7 +50,8 @@ class GameActor(gameId: String, gameDef: GameDef, botRefs: Map[BotId, ActorRef],
       ref ! GameAssigned(gameId, self)
     }
 
-    val (game, initialStates) = gameDef.createGame(random, botRefs.keys.toList)
+    logger.info(s"Creating game with random seed: $randomSeed")
+    val (game, initialStates) = gameDef.createGame(random, botRefs.keys.toList, config.maxRoundsPerGame)
     this._game = Some(game)
     BoardPrinter.printBoard(game.currentBoard)
     sendGameStatesToBots(initialStates)
@@ -56,14 +60,15 @@ class GameActor(gameId: String, gameDef: GameDef, botRefs: Map[BotId, ActorRef],
 
   override def receive: Receive = {
     case RoundTimeout(roundId) =>
-      if (roundId == currentRound) {
+      println(s"RoundTimeout($roundId)")
+      if (roundId == game.currentRound) {
         logger.info("Round timeout triggered - apply received moves")
         applyRound()
       }
     case BotMoveResponse(round, botAction: BotAction) =>
       refToBotLookup.get(sender()) match {
         case Some(botId) =>
-          if (round != currentRound)
+          if (round != game.currentRound)
             logger.warn(s"Move for $botId rejected - wrong round")
           else {
 
@@ -80,10 +85,12 @@ class GameActor(gameId: String, gameDef: GameDef, botRefs: Map[BotId, ActorRef],
   }
 
   def scheduleRoundTimeout(): Unit = {
-    timers.startSingleTimer(RoundTimeout(currentRound), RoundTimeout(currentRound), config.maxTimePerRoundMs.millis)
+    val roundTimeoutMsg = RoundTimeout(game.currentRound)
+    timers.startSingleTimer(roundTimeoutMsg, roundTimeoutMsg, config.maxTimePerRoundMs.millis)
   }
+
   def applyRound(): Unit = {
-    timers.cancel(RoundTimeout(currentRound))
+    timers.cancel(RoundTimeout(game.currentRound))
     logger.info("Applying round")
     game.applyRound(random, roundMoves) match {
       case GameRoundResult.GameOver(winnerOpt) =>
@@ -93,7 +100,6 @@ class GameActor(gameId: String, gameDef: GameDef, botRefs: Map[BotId, ActorRef],
         context.stop(self)
       case GameRoundResult.GameRound(newStates) =>
         roundMoves = Map.empty
-        currentRound = currentRound + 1
         scheduleRoundTimeout()
         sendGameStatesToBots(newStates)
     }
@@ -104,7 +110,7 @@ class GameActor(gameId: String, gameDef: GameDef, botRefs: Map[BotId, ActorRef],
     states.foreach { case (botId, board) =>
       botRefs.get(botId) match {
         case Some(ref) =>
-          ref ! GameActor.BotMoveRequest(currentRound, board)
+          ref ! GameActor.BotMoveRequest(game.currentRound, board)
         case None =>
           logger.error(s"Game state send to $botId - bot ref not found")
       }

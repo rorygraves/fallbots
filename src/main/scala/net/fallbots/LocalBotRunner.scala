@@ -27,8 +27,14 @@ object LocalBotRunner {
       }
   }
 
-  def runGame(gameId: String, gameDef: GameDef, random: Random, bots: Map[BotId, BotInterface]): Option[BotId] = {
-    val (game, initialStates) = gameDef.createGame(random, bots.keySet.toList)
+  def runGame(
+      gameId: String,
+      gameDef: GameDef,
+      random: Random,
+      bots: Map[BotId, BotInterface],
+      maxRounds: Int
+  ): Option[BotId] = {
+    val (game, initialStates) = gameDef.createGame(random, bots.keySet.toList, maxRounds)
 
     notifyBotsOfGameStart(gameId, bots)
     var nextActions = applyMovesToBot(bots, initialStates)

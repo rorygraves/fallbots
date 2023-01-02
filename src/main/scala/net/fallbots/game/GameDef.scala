@@ -15,5 +15,5 @@ trait GameDef {
     * @return
     *   A tuple of the initial game state and a map of bots and their initial state info
     */
-  def createGame(random: Random, playerList: List[BotId]): (Game, Map[BotId, Board])
+  def createGame(random: Random, playerList: List[BotId], maxRounds: Int): (Game, Map[BotId, Board])
 }

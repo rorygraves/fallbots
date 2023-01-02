@@ -3,7 +3,6 @@ package net.fallbots.server.config
 import net.fallbots.server.cmdline.ServerImpl
 
 object Config {
-  val default: Config = Config()
 
   val DefaultMaxTimePerRoundMs = 2000
   val DefaultMaxRoundsPerGame  = 200
@@ -12,6 +11,8 @@ object Config {
   val DefaultMaxPlayersPerGame           = 4
   val DefaultMaxWaitForPlayersMs         = 2000
   val DefaultGameRandomSeed: Option[Int] = None
+
+  val default: Config = Config()
 
   case class GameServerConfig(
       // The minimum number of players per game
@@ -32,7 +33,7 @@ object Config {
   case class Config(
       port: Int = -1,
       serverImpl: ServerImpl.Impl = ServerImpl.Jetty,
-      gaemServerConfig: GameServerConfig = GameServerConfig(),
+      gameServerConfig: GameServerConfig = GameServerConfig(),
       gameConfig: GameConfig = GameConfig()
   )
 

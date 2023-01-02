@@ -9,4 +9,5 @@ import scala.util.Random
 trait Game {
   def applyRound(random: Random, moves: Map[BotId, BotAction]): GameRoundResult
   def currentBoard: Board
+  def currentRound: Int
 }

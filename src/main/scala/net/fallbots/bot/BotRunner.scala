@@ -165,7 +165,8 @@ class BotRunner(hostname: String, port: Int, botId: Int, botSecret: String, bot:
   private def sendMessage(message: FBMessage): Unit = {
     logger.debug(s"Sending message: $message")
     import net.fallbots.message.MessageImplicits._
-    outgoingQueue.offer(TextMessage(write(message)))
+    val outGoingMsg = write(message, indent = 4)
+    outgoingQueue.offer(TextMessage(outGoingMsg))
   }
 
   /** Wait for a message from the server

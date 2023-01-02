@@ -30,7 +30,7 @@ object FallBotsServer {
   def runServer(config: Config.Config): Unit = {
     implicit val as: ActorSystem = ActorSystem("main")
 
-    val gameManager = as.actorOf(GameManager.props(config.gaemServerConfig, config.gameConfig), "GameManager")
+    val gameManager = as.actorOf(GameManager.props(config.gameServerConfig, config.gameConfig), "GameManager")
     val botManager  = as.actorOf(BotManager.props(gameManager), "BotManager")
 
     logger.info("FallBots Server starting")

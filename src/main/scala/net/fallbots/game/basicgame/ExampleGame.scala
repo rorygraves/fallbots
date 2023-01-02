@@ -35,7 +35,7 @@ object ExampleGame extends GameDef {
     board // right now all players see entire game state
   }
 
-  override def createGame(random: Random, playerList: List[BotId]): (Game, Map[BotId, Board]) = {
+  override def createGame(random: Random, playerList: List[BotId], maxRounds: Int): (Game, Map[BotId, Board]) = {
 
     val width        = 10
     val height       = 10
@@ -43,17 +43,20 @@ object ExampleGame extends GameDef {
     val initialBoard = Board.createEmpty(10, 10, target)
 
     val board = placePlayers(initialBoard, playerList, random)
-    (new ExampleGame(board, random), generatePlayerInfos(board))
+    (new ExampleGame(board, maxRounds, random), generatePlayerInfos(board))
   }
 
   private def generatePlayerInfos(board: Board): Map[BotId, Board] =
     board.bots.keys.map(b => b -> filterBoardForBot(b, board)).toMap
 }
 
-class ExampleGame(initialBoard: Board, random: Random) extends Game {
+class ExampleGame(initialBoard: Board, maxRounds: Int, random: Random) extends Game {
 
   private var _currentBoard: Board = initialBoard
   def currentBoard: Board          = _currentBoard
+
+  private var _currentRound = 1
+  def currentRound          = _currentRound
 
   @tailrec
   private final def applyMoves(moves: List[(BotId, BotAction)], board: Board): Board = {
@@ -66,14 +69,20 @@ class ExampleGame(initialBoard: Board, random: Random) extends Game {
   }
 
   override def applyRound(random: Random, moves: Map[BotId, BotAction]): GameRoundResult = {
+    if (currentRound > maxRounds) throw new IllegalStateException("Game is over")
     val randomisedMoves = random.shuffle(moves.toList)
     _currentBoard = applyMoves(randomisedMoves, currentBoard)
+
+    _currentRound = currentRound + 1
 
     currentBoard.getWinner match {
       case Some(winner) =>
         GameRoundResult.GameOver(Some(winner))
       case None =>
-        GameRoundResult.GameRound(ExampleGame.generatePlayerInfos(currentBoard))
+        if (_currentRound > maxRounds)
+          GameRoundResult.GameOver(None)
+        else
+          GameRoundResult.GameRound(ExampleGame.generatePlayerInfos(currentBoard))
     }
   }
 }
