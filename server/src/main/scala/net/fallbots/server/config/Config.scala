@@ -7,6 +7,7 @@ object Config {
   val DefaultMaxTimePerRoundMs = 2000
   val DefaultMaxRoundsPerGame  = 200
 
+  val DefaultNoPlayers                   = 10
   val DefaultMinPlayersPerGame           = 2
   val DefaultMaxPlayersPerGame           = 4
   val DefaultMaxWaitForPlayersMs         = 2000
@@ -15,13 +16,14 @@ object Config {
   val default: Config = Config()
 
   case class GameServerConfig(
+      noPlayers: Int = DefaultNoPlayers,
       // The minimum number of players per game
       minPlayersPerGame: Int = DefaultMinPlayersPerGame,
       // the maximum number of players per game
       maxPlayersPerGame: Int = DefaultMaxPlayersPerGame,
       // the maximum wait (in ms) after minPlayers has been reached before the game is started
       maxWaitForPlayersMs: Int = DefaultMaxWaitForPlayersMs
-  )
+  ) {}
 
   case class GameConfig(
       maxTimePerRoundMs: Int = DefaultMaxTimePerRoundMs,

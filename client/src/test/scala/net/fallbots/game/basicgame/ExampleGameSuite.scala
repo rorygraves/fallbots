@@ -2,6 +2,7 @@ package net.fallbots.game.basicgame
 
 import net.fallbots.bot.{LocalBotRunner, SimpleBot}
 import net.fallbots.shared.BotId
+import org.scalatest.funsuite.AnyFunSuite
 
 import scala.util.Random
 

@@ -3,10 +3,13 @@ package net.fallbots.server
 import akka.actor.ActorSystem
 import net.fallbots.server.FallBotsServer.logger
 import net.fallbots.server.akkahttp.AkkaHttpServer
+import net.fallbots.server.auth.AuthService
 import net.fallbots.server.cmdline.{CmdLineParser, ServerImpl}
 import net.fallbots.server.config.Config
 import net.fallbots.server.jetty.JettyServer
 import org.slf4j.{Logger, LoggerFactory}
+
+import scala.util.Random
 
 object FallBotsServer {
 
@@ -22,7 +25,9 @@ object FallBotsServer {
     CmdLineParser.parseCommandLine(args) match {
       case Some(config) =>
         try {
-          val server = new FallBotsServer(config)
+          val authService = AuthService.createService(config.gameServerConfig.noPlayers)
+          authService.printSecrets()
+          val server = new FallBotsServer(config, authService)
           server.start()
           Some(server)
         } catch {
@@ -37,7 +42,7 @@ object FallBotsServer {
   }
 }
 
-class FallBotsServer(val config: Config.Config) {
+class FallBotsServer(val config: Config.Config, val authService: AuthService) {
   private implicit var actorSystem: ActorSystem = null
   private var server: Option[AbstractServer]    = None
   private var _isRunning                        = false
@@ -46,7 +51,7 @@ class FallBotsServer(val config: Config.Config) {
     actorSystem = ActorSystem("main")
 
     val gameManager = actorSystem.actorOf(GameManager.props(config.gameServerConfig, config.gameConfig), "GameManager")
-    val botManager  = actorSystem.actorOf(BotManager.props(gameManager), "BotManager")
+    val botManager  = actorSystem.actorOf(BotManager.props(gameManager, authService), "BotManager")
 
     logger.info("FallBots Server starting")
     server = Some(config.serverImpl match {

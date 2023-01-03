@@ -2,6 +2,7 @@ package net.fallbots.server
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props, Terminated}
 import net.fallbots.server.BotManager._
+import net.fallbots.server.auth.AuthService
 import net.fallbots.shared.BotId
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -9,7 +10,7 @@ import scala.concurrent.ExecutionContext
 
 object BotManager {
 
-  def props(gameManager: ActorRef): Props = Props(new BotManager(gameManager))
+  def props(gameManager: ActorRef, authService: AuthService): Props = Props(new BotManager(gameManager, authService))
 
   case class BMBotRegistration(botId: BotId, secret: String)
 
@@ -24,7 +25,7 @@ object BotManager {
 
 /** The BotManager is responsible for manging all of the connected bots.
   */
-class BotManager(gameManager: ActorRef) extends Actor {
+class BotManager(gameManager: ActorRef, authService: AuthService) extends Actor {
 
   val logger: Logger                = LoggerFactory.getLogger("BotManager")
   implicit val as: ActorSystem      = context.system
@@ -34,10 +35,7 @@ class BotManager(gameManager: ActorRef) extends Actor {
 
   private var connectedBots = Map[BotId, BotState]()
 
-  def checkSecret(botId: BotId, secret: String): Boolean = {
-    // TODO - handle secrets properly
-    secret == "abc"
-  }
+  private def checkSecret(botId: BotId, secret: String): Boolean = authService.authorise(botId, secret)
 
   override def receive: Receive = {
     case Terminated(ref) =>

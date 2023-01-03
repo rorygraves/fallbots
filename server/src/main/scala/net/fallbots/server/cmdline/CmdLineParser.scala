@@ -14,7 +14,16 @@ object CmdLineParser {
     OParser.sequence(
       programName("FallBots"),
       head("fallbots", "0.1"),
-      // option -f, --foo
+
+      // game server configuration
+      opt[Int]("noPlayers")
+        .action((x, c) => c.copy(gameServerConfig = c.gameServerConfig.copy(noPlayers = x)))
+        .validate(v => if (v < 1) Left("must be >=1") else Right(()))
+        .text(
+          s"The total number of bots the server will accept - Default ${Config.DefaultNoPlayers})"
+        ),
+
+      // game configuration
       opt[Int]("maxTimePerRoundMs")
         .action((x, c) => c.copy(gameConfig = c.gameConfig.copy(maxTimePerRoundMs = x)))
         .validate(v => if (v < 100) Left("must be >=100") else Right(()))
